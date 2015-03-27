@@ -10,12 +10,17 @@ Tile = Enum('Tile', 'EARTH WALL FLOOR')
 
 
 class MapTransform(object):
-    def transform(self, map):
+
+    def __init__(self, map):
+        self.map = map
+        
+    def transform(self):
         raise NotImplemented
 
 class RandomizeMap(MapTransform):
 
-    def __init__(self,prob):
+    def __init__(self,map, prob):
+        super().__init__(map)
         self.prob = prob
         
     def _gen_square(self):
@@ -24,7 +29,8 @@ class RandomizeMap(MapTransform):
         else:
             return Tile.FLOOR
     
-    def transform(self, map):
+    def transform(self):
+        map = self.map
         height = len(map)
         width = len(map[0])
 
@@ -44,7 +50,11 @@ class RandomizeMap(MapTransform):
 
 class SmoothMap(MapTransform):
 
-    def transform(self,map):
+    def __init__(self, map):
+        super().__init__(map)
+        
+    def transform(self):
+        map = self.map
         for y in range(1,len(map)-1):
             for x in range(1,len(map[y])-1):
                        
@@ -77,7 +87,11 @@ class SmoothMap(MapTransform):
 
 class HardenWallsMap(MapTransform):
 
-    def transform(self, map):
+    def __init__(self, map):
+        super().__init__(map)
+        
+    def transform(self):
+        map = self.map
         flooded = set()
         for y in range(1,len(map)-1):
             for x in range(1,len(map[y])-1):
@@ -133,7 +147,7 @@ class Animator(object):
 
     def __init__(self, renderer):
         self.renderer = renderer
-        self.maps = []
+        self.transforms = []
 
     def _clear_console(self):
         if os.name == 'posix':
@@ -141,17 +155,15 @@ class Animator(object):
         else:
             os.system('CLS')
             
-    def add_map(self, map, deepcopy=False):
-        if deepcopy:
-            self.maps.append(copy.deepcopy(map))
-        else:
-            self.maps.append(map)
+    def add_transform(self, transform):
+        self.transforms.append(transform)
 
     def animate(self, delay=1):
-        for map in self.maps:
+        for transform in self.transforms:
             # Clear the console
             self._clear_console()
 
+            map = transform.transform()
             outstr = self.renderer.render(map)
             # Write the current frame on stdout and sleep
             
@@ -166,24 +178,17 @@ def main():
     PROB = 0.4
     
     map = [[None for _ in range(0, WIDTH)] for _ in range(0, HEIGHT)]
-    
-    creator = RandomizeMap(PROB)
-    smooth = SmoothMap()
-    flood = HardenWallsMap()
+
+    creator = RandomizeMap(map, PROB)
+    smooth = SmoothMap(map)
+    flood = HardenWallsMap(map)
+
     renderer = TextRenderer()
     animator = Animator(renderer)
 
-    map = creator.transform(map)
-    animator.add_map(map,True)
-    
-    map = smooth.transform(map)
-    animator.add_map(map,True)
-
-    # map = smooth.transform(map)
-    # animator.add_map(map,True)
-
-    map = flood.transform(map)
-    animator.add_map(map,True)
+    animator.add_transform(creator)
+    animator.add_transform(smooth)
+    animator.add_transform(flood)
     
     animator.animate()    
     
