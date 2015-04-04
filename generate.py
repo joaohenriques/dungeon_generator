@@ -6,9 +6,8 @@ from generators.cellular_automata import *
 
 def main():
 
-
     cave = SquareMap(40, 77)
-    creator = RandomizeCave(.30)
+    creator = RandomizeCave(.40)
     smooth = SmoothCave()
     closerooms = CloseOneSquareRooms()
     flood = HardenWallsCave()

@@ -124,19 +124,24 @@ class LinkRooms(CaveGenerationCommand):
 
         n_rooms = len(rooms)
         while n_rooms > 1:
-            distances = {}
+            distances = []
             for i in range(0, len(rooms)):
                 for j in range(i+1, len(rooms)):
                     room_a = rooms[i]
                     room_b = rooms[j]
-                    distances[(i, j)] = self._calculate_distance(room_a, room_b)
+                    distances.append((self._calculate_distance(room_a, room_b), (i, j)))
 
-            paths = distances.values()
-            paths.sort()
-            (pos_s, pos_t) = choice(paths[0][1])
+            distances.sort()
+            shortest, (a, b) = distances[0]
+
+            (pos_s, pos_t) = choice(shortest[1])
             cave = self.dig(cave, pos_s, pos_t)
-
-            rooms = self._find_rooms(cave)
+            del rooms[a]
+            if a > b:
+                del rooms[b]
+            else:
+                del rooms[b-1]
+            rooms = self._find_rooms(cave, rooms)
             n_rooms = len(rooms)
 
         return cave
@@ -178,8 +183,10 @@ class LinkRooms(CaveGenerationCommand):
 
         return min_distance, closest
     
-    def _find_rooms(self, cave):
-        rooms = []
+    def _find_rooms(self, cave, rooms=None):
+        if not rooms:
+            rooms = []
+
         for pos in cave.keys(filter_expr=lambda x: x == Tile.FLOOR):
             in_room = False
             for room in rooms:
@@ -187,12 +194,12 @@ class LinkRooms(CaveGenerationCommand):
                     in_room = True
                     break
             if not in_room:
-                rooms.append(self._it_flood_room(cave, pos))
+                rooms.append(self._flood_room(cave, pos))
 
         return rooms
 
     @staticmethod
-    def _it_flood_room(cave, pos):
+    def _flood_room(cave, pos):
         room = set()
         stack = [pos]
 
