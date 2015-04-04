@@ -1,110 +1,14 @@
 from __future__ import print_function
 
+__author__ = 'jpsh'
+
 import os
 import sys
 import time
 from random import random, choice
-from enum import Enum
 from abc import ABCMeta, abstractmethod
 from math import sqrt
-from collections import namedtuple
-
-Tile = Enum('Tile', 'UNKNOWN EARTH WALL FLOOR')
-
-
-class SquareMap(object):
-
-    def __init__(self, height, width):
-        self._map = [[Tile.UNKNOWN for _ in range(0, width)] for _ in range(0, height)]
-
-    @property
-    def width(self):
-        return len(self._map[0])
-
-    @property
-    def height(self):
-        return len(self._map)
-
-    def get(self, pos):
-        x, y = pos
-        try:
-            return self._map[y][x]
-        except IndexError:
-            # TODO log
-            return Tile.UNKNOWN
-
-    def set(self, pos, val):
-        x, y = pos
-        try:
-            self._map[y][x] = val
-        except IndexError:
-            # TODO log
-            pass
-
-    def keys(self, start_pos=None, end_pos=None):
-        if not start_pos:
-            start_pos = (0, 0)
-        if not end_pos:
-            end_pos = (self.width, self.height)
-        return (Position(x, y) for y in range(start_pos[1], end_pos[1]) for x in range(start_pos[0], end_pos[0]))
-
-    def values(self, start_pos=None, end_pos=None):
-        if not start_pos:
-            start_pos = (0, 0)
-        if not end_pos:
-            end_pos = (self.width, self.height)
-        return (self._map[y][x] for y in range(start_pos[1], end_pos[1]) for x in range(start_pos[0], end_pos[0]))
-
-    def items(self, start_pos=None, end_pos=None):
-        if not start_pos:
-            start_pos = (0, 0)
-        if not end_pos:
-            end_pos = (self.width, self.height)
-        return ((Position(x, y), self._map[y][x]) for y in range(start_pos[1], end_pos[1]) for x in range(start_pos[0], end_pos[0]))
-
-
-class Position(namedtuple('Point', ['x', 'y'])):
-
-    def __init__(self, x, y, **kwargs):
-        super(tuple, self).__init__(x, y, **kwargs)
-
-    @property
-    def n(self):
-        return Position(self.x, self.y-1)
-
-    @property
-    def ne(self):
-        return Position(self.x+1, self.y-1)
-
-    @property
-    def e(self):
-        return Position(self.x+1, self.y)
-
-    @property
-    def se(self):
-        return Position(self.x+1, self.y+1)
-
-    @property
-    def s(self):
-        return Position(self.x, self.y+1)
-
-    @property
-    def sw(self):
-        return Position(self.x-1, self.y+1)
-
-    @property
-    def w(self):
-        return Position(self.x-1, self.y)
-
-    @property
-    def nw(self):
-        return Position(self.x-1, self.y-1)
-
-    def __repr__(self):
-        return "Position(x={}, y={})".format(self.x, self.y)
-
-    def __str__(self):
-        return "({}, {})".format(self.x, self.y)
+from common import Tile
 
 
 class CaveGenerationCommand(object):
@@ -113,10 +17,6 @@ class CaveGenerationCommand(object):
     @abstractmethod
     def execute(self, cave):
         pass
-    
-    # @abstractmethod
-    # def undo(self):
-    #     pass
 
 
 class RandomizeCave(CaveGenerationCommand):
@@ -133,7 +33,7 @@ class RandomizeCave(CaveGenerationCommand):
     def execute(self, cave):
 
         for pos in cave.keys():
-            cave.set(pos,self._gen_square())
+            cave.set(pos, self._gen_square())
 
         return cave
 
@@ -233,6 +133,7 @@ class CloseSingleRooms(CaveGenerationCommand):
         return cave
 
 
+
 class LinkRooms(CaveGenerationCommand):
 
     def __init__(self, crop=0.25):
@@ -248,14 +149,14 @@ class LinkRooms(CaveGenerationCommand):
                 for j in range(i+1, len(rooms)):
                     room_a = rooms[i]
                     room_b = rooms[j]
-                    distances[(i,j)] = self._calculate_distance(room_a, room_b)
+                    distances[(i, j)] = self._calculate_distance(room_a, room_b)
 
             paths = distances.values()
             paths.sort()
             paths = paths[:max(1, int(len(paths) * self.crop))]
             for path in paths:
-                (pos_s,pos_t) = choice(path[1])
-                cave = self.dig(cave,pos_s,pos_t)
+                (pos_s, pos_t) = choice(path[1])
+                cave = self.dig(cave, pos_s, pos_t)
 
         return cave
 
@@ -285,7 +186,7 @@ class LinkRooms(CaveGenerationCommand):
             elif yt < ys:
                 yd -= 1
 
-        cave.set((xd,yd), Tile.FLOOR)
+        cave.set((xd, yd), Tile.FLOOR)
         return self.dig(cave, (xd, yd), (xt, yt))
 
     @staticmethod
@@ -296,7 +197,7 @@ class LinkRooms(CaveGenerationCommand):
             for(xb, yb) in room_b:
                 x = abs(xa-xb)
                 y = abs(ya-yb)
-                distance = sqrt(pow(x,2) + pow(y,2))
+                distance = sqrt(pow(x, 2) + pow(y, 2))
                 if distance == min_distance:
                     closest.append(((xa, ya), (xb, yb)))
                 elif distance < min_distance:
@@ -340,6 +241,7 @@ class LinkRooms(CaveGenerationCommand):
 
         return room
 
+
 class MapRender(object):
     __metaclass__ = ABCMeta
         
@@ -367,8 +269,6 @@ class TextRenderer(MapRender):
                 str_buffer.append('+')
             elif val == Tile.DIG:
                 str_buffer.append('.')
-            #elif val == Tile.SAND:
-            #    buffer.append('.')
             else:
                 str_buffer.append(str(val))
 
@@ -411,36 +311,3 @@ class Animator(object):
             sys.stdout.write(out_str)
             sys.stdout.flush()
             time.sleep(delay)
-
-
-def main():
-
-    WIDTH = 77
-    HEIGHT= 20
-    PROB = 0.4
-
-    cave = SquareMap(HEIGHT, WIDTH)
-    creator = RandomizeCave(PROB)
-    smooth = SmoothCave()
-    closerooms = CloseSingleRooms()
-    flood = HardenWallsCave()
-    linkroom = LinkRooms(.2)
-    
-    renderer = TextRenderer()
-    animator = Animator(renderer, cave)
-
-    animator.add_command(creator)
-    animator.add_command(smooth)
-    animator.add_command(closerooms)
-    animator.add_command(linkroom)
-    animator.add_command(linkroom)
-    animator.add_command(linkroom)
-    animator.add_command(linkroom)
-    animator.add_command(linkroom)
-    animator.add_command(linkroom)
-    animator.add_command(flood)
-    
-    animator.animate(delay=0.1)
-    
-if __name__ == '__main__':
-    main()
