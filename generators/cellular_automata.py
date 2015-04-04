@@ -12,7 +12,7 @@ from collections import namedtuple
 Tile = Enum('Tile', 'UNKNOWN EARTH WALL FLOOR')
 
 
-class Cave(object):
+class SquareMap(object):
 
     def __init__(self, height, width):
         self._map = [[Tile.UNKNOWN for _ in range(0, width)] for _ in range(0, height)]
@@ -57,7 +57,7 @@ class Cave(object):
 
     def items(self, start_pos=None, end_pos=None):
         if not start_pos:
-            start_pos = (0,0)
+            start_pos = (0, 0)
         if not end_pos:
             end_pos = (self.width, self.height)
         return ((Position(x, y), self._map[y][x]) for y in range(start_pos[1], end_pos[1]) for x in range(start_pos[0], end_pos[0]))
@@ -65,8 +65,8 @@ class Cave(object):
 
 class Position(namedtuple('Point', ['x', 'y'])):
 
-    def __init__(self, x, y, **kwds):
-        super(tuple, self).__init__(x, y, **kwds)
+    def __init__(self, x, y, **kwargs):
+        super(tuple, self).__init__(x, y, **kwargs)
 
     @property
     def n(self):
@@ -137,6 +137,7 @@ class RandomizeCave(CaveGenerationCommand):
 
         return cave
 
+
 class SmoothCave(CaveGenerationCommand):
 
     def execute(self, cave):
@@ -205,9 +206,9 @@ class CloseSingleRooms(CaveGenerationCommand):
 
     def execute(self, cave):
         for pos in cave.keys():
-            if cave.get(pos) == Tile.FLOOR and \
-               cave.get(pos.s) != Tile.FLOOR and \
-               cave.get(pos.e) != Tile.FLOOR:
+            if (cave.get(pos) == Tile.FLOOR and
+                    cave.get(pos.s) != Tile.FLOOR and
+                    cave.get(pos.e) != Tile.FLOOR):
 
                 if cave.get(pos.sw) == Tile.FLOOR:
                     if random() > 0.5:
@@ -215,15 +216,15 @@ class CloseSingleRooms(CaveGenerationCommand):
                     else:
                         cave.set(pos.e, Tile.FLOOR)
 
-                elif cave.get(pos.n) != Tile.FLOOR and \
-                        cave.get(pos.w) != Tile.FLOOR:
+                elif (cave.get(pos.n) != Tile.FLOOR and
+                        cave.get(pos.w) != Tile.FLOOR):
 
                     cave.set(pos, Tile.EARTH)
 
-            elif cave.get(pos) != Tile.FLOOR and \
-                 cave.get(pos.s) == Tile.FLOOR and \
-                 cave.get(pos.e) == Tile.FLOOR and \
-                 cave.get(pos.se) != Tile.FLOOR:
+            elif (cave.get(pos) != Tile.FLOOR and
+                    cave.get(pos.s) == Tile.FLOOR and
+                    cave.get(pos.e) == Tile.FLOOR and
+                    cave.get(pos.se) != Tile.FLOOR):
                 if random() > 0.5:
                     cave.set(pos, Tile.FLOOR)
                 else:
@@ -418,7 +419,7 @@ def main():
     HEIGHT= 20
     PROB = 0.4
 
-    cave = Cave(HEIGHT, WIDTH)
+    cave = SquareMap(HEIGHT, WIDTH)
     creator = RandomizeCave(PROB)
     smooth = SmoothCave()
     closerooms = CloseSingleRooms()
