@@ -67,6 +67,8 @@ class SquareMap(object):
     def get(self, pos):
         x, y = pos
         try:
+            if x < 0 or y < 0:
+                raise IndexError
             return self._map[y][x]
         except IndexError:
             # TODO log
@@ -75,6 +77,8 @@ class SquareMap(object):
     def set(self, pos, val):
         x, y = pos
         try:
+            if x < 0 or y < 0:
+                raise IndexError
             self._map[y][x] = val
         except IndexError:
             # TODO log

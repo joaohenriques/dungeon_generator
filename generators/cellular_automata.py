@@ -74,7 +74,7 @@ class HardenWallsCave(CaveGenerationCommand):
 
     def execute(self, cave):
         flooded = set()
-        for pos in cave.keys():
+        for pos in cave.keys(filter_expr=lambda x: x == Tile.FLOOR):
             cave = self._flood_tile(cave, pos, flooded)
         return cave
 
@@ -102,48 +102,28 @@ class HardenWallsCave(CaveGenerationCommand):
         return cave
 
 
-class CloseSingleRooms(CaveGenerationCommand):
+class CloseOneSquareRooms(CaveGenerationCommand):
 
     def execute(self, cave):
-        for pos in cave.keys():
+        for pos in cave.keys(filter_expr=lambda x: x == Tile.FLOOR):
             if (cave.get(pos) == Tile.FLOOR and
                     cave.get(pos.s) != Tile.FLOOR and
-                    cave.get(pos.e) != Tile.FLOOR):
+                    cave.get(pos.e) != Tile.FLOOR and
+                    cave.get(pos.n) != Tile.FLOOR and
+                    cave.get(pos.w) != Tile.FLOOR):
 
-                if cave.get(pos.sw) == Tile.FLOOR:
-                    if random() > 0.5:
-                        cave.set(pos.s, Tile.FLOOR)
-                    else:
-                        cave.set(pos.e, Tile.FLOOR)
-
-                elif (cave.get(pos.n) != Tile.FLOOR and
-                        cave.get(pos.w) != Tile.FLOOR):
-
-                    cave.set(pos, Tile.EARTH)
-
-            elif (cave.get(pos) != Tile.FLOOR and
-                    cave.get(pos.s) == Tile.FLOOR and
-                    cave.get(pos.e) == Tile.FLOOR and
-                    cave.get(pos.se) != Tile.FLOOR):
-                if random() > 0.5:
-                    cave.set(pos, Tile.FLOOR)
-                else:
-                    cave.set(pos.sw, Tile.FLOOR)
+                cave.set(pos, Tile.EARTH)
 
         return cave
 
 
-
 class LinkRooms(CaveGenerationCommand):
-
-    def __init__(self, crop=0.25):
-        self.crop = crop
 
     def execute(self, cave):
         rooms = self._find_rooms(cave)
 
         n_rooms = len(rooms)
-        if n_rooms > 1:
+        while n_rooms > 1:
             distances = {}
             for i in range(0, len(rooms)):
                 for j in range(i+1, len(rooms)):
@@ -153,41 +133,33 @@ class LinkRooms(CaveGenerationCommand):
 
             paths = distances.values()
             paths.sort()
-            paths = paths[:max(1, int(len(paths) * self.crop))]
-            for path in paths:
-                (pos_s, pos_t) = choice(path[1])
-                cave = self.dig(cave, pos_s, pos_t)
+            (pos_s, pos_t) = choice(paths[0][1])
+            cave = self.dig(cave, pos_s, pos_t)
+
+            rooms = self._find_rooms(cave)
+            n_rooms = len(rooms)
 
         return cave
 
-    def dig(self, cave, (xs, ys), (xt, yt)):
+    @staticmethod
+    def dig(cave, (xs, ys), (xt, yt)):
+        dx = xt - xs
+        dy = yt - ys
 
-        if xs == xt and ys == yt:
-            return cave
-
-        xd, yd = xs, ys
-
-        if xs != xt:
-            if ys != yt and random() > 0.5:
-                axis = 'V'
+        x, y = xs, ys
+        while x != xt or y != yt:
+            if x != xt and y == yt:
+                x += dx/abs(dx)
+            elif x == xt and y != yt:
+                y += dy/abs(dy)
             else:
-                axis = 'H'
-        else:
-            axis = 'V'
+                if random() > 0.5:
+                    x += dx/abs(dx)
+                else:
+                    y += dy/abs(dy)
+            cave.set((x, y), Tile.FLOOR)
 
-        if axis == 'H':
-            if xt > xs:
-                xd += 1
-            elif xt < xs:
-                xd -= 1
-        else:
-            if yt > ys:
-                yd += 1
-            elif yt < ys:
-                yd -= 1
-
-        cave.set((xd, yd), Tile.FLOOR)
-        return self.dig(cave, (xd, yd), (xt, yt))
+        return cave
 
     @staticmethod
     def _calculate_distance(room_a, room_b):
@@ -208,15 +180,14 @@ class LinkRooms(CaveGenerationCommand):
     
     def _find_rooms(self, cave):
         rooms = []
-        for pos in cave.keys():
-            if cave.get(pos) == Tile.FLOOR:
-                in_room = False
-                for room in rooms:
-                    if pos in room:
-                        in_room = True
-                        break
-                if not in_room:
-                    rooms.append(self._it_flood_room(cave, pos))
+        for pos in cave.keys(filter_expr=lambda x: x == Tile.FLOOR):
+            in_room = False
+            for room in rooms:
+                if pos in room:
+                    in_room = True
+                    break
+            if not in_room:
+                rooms.append(self._it_flood_room(cave, pos))
 
         return rooms
 

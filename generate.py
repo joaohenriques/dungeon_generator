@@ -7,12 +7,12 @@ from generators.cellular_automata import *
 def main():
 
 
-    cave = SquareMap(20, 77)
-    creator = RandomizeCave(.4)
+    cave = SquareMap(40, 77)
+    creator = RandomizeCave(.30)
     smooth = SmoothCave()
-    closerooms = CloseSingleRooms()
+    closerooms = CloseOneSquareRooms()
     flood = HardenWallsCave()
-    linkroom = LinkRooms(.2)
+    linkroom = LinkRooms()
 
     renderer = TextRenderer()
     animator = Animator(renderer, cave)
@@ -20,11 +20,6 @@ def main():
     animator.add_command(creator)
     animator.add_command(smooth)
     animator.add_command(closerooms)
-    animator.add_command(linkroom)
-    animator.add_command(linkroom)
-    animator.add_command(linkroom)
-    animator.add_command(linkroom)
-    animator.add_command(linkroom)
     animator.add_command(linkroom)
     animator.add_command(flood)
 
