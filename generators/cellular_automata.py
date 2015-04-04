@@ -8,7 +8,36 @@ from enum import Enum
 from abc import ABCMeta, abstractmethod
 from math import sqrt
 
-Tile = Enum('Tile', 'EARTH WALL FLOOR ROOM')
+
+Tile = Enum('Tile', 'UNKNOWN EARTH WALL FLOOR')
+
+
+class Cave(object):
+
+    def __init__(self, height, width):
+        self._map = [[Tile.UNKNOWN for _ in range(0, width)] for _ in range(0, height)]
+
+    @property
+    def width(self):
+        return len(self._map[0])
+
+    @property
+    def height(self):
+        return len(self._map)
+
+    def get(self, pos):
+        x, y = pos
+        return self._map[y][x]
+
+    def set(self, pos, val):
+        x, y = pos
+        self._map[y][x] = val
+
+    def keys(self):
+        return ((x, y) for y in range(0, self.height) for x in range(0, self.width))
+
+    def items(self):
+        return (((x, y), self._map[y][x]) for y in range(0, self.height) for x in range(0, self.width))
 
 
 class CaveGenerationCommand(object):
@@ -144,6 +173,7 @@ class CloseSingleRooms(CaveGenerationCommand):
 
         return cave
 
+
 class LinkRooms(CaveGenerationCommand):
 
     def __init__(self, crop=0.25):
@@ -177,10 +207,11 @@ class LinkRooms(CaveGenerationCommand):
 
         xd, yd = xs, ys
 
-        axis = 'H'
         if xs != xt:
             if ys != yt and random() > 0.5:
                 axis = 'V'
+            else:
+                axis = 'H'
         else:
             axis = 'V'
 
@@ -246,7 +277,7 @@ class LinkRooms(CaveGenerationCommand):
 
 
 class MapRender(object):
-    __metaclass__=ABCMeta
+    __metaclass__ = ABCMeta
         
     @abstractmethod
     def render(self, cave):
