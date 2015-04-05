@@ -9,7 +9,7 @@ from random import random, choice
 from abc import ABCMeta, abstractmethod
 from math import sqrt
 from common import Tile
-
+from common.maps import Square
 
 class CaveGenerationCommand(object):
     __metaclass__ = ABCMeta
@@ -122,34 +122,34 @@ class LinkRooms(CaveGenerationCommand):
     def execute(self, cave):
         rooms = self._find_rooms(cave)
 
-        n_rooms = len(rooms)
-        while n_rooms > 1:
-            distances = []
+        while len(rooms) > 1:
+            paths = []
             for i in range(0, len(rooms)):
                 for j in range(i+1, len(rooms)):
                     room_a = rooms[i]
                     room_b = rooms[j]
-                    distances.append((self._calculate_distance(room_a, room_b), (i, j)))
-
-            distances.sort()
-            shortest, (a, b) = distances[0]
+                    path = self._calculate_distance(room_a, room_b)
+                    paths.append((path, (i, j)))
+            paths.sort()
+            shortest, (a, b) = paths[0]
 
             (pos_s, pos_t) = choice(shortest[1])
-            cave = self.dig(cave, pos_s, pos_t)
-            del rooms[a]
-            if a > b:
-                del rooms[b]
-            else:
-                del rooms[b-1]
-            rooms = self._find_rooms(cave, rooms)
-            n_rooms = len(rooms)
+            corridor = self.dig(pos_s, pos_t)
+            rooms[a].update(corridor)
+            rooms[a].update(rooms[b])
+            del rooms[b]
+
+            for pos in corridor:
+                cave.set(pos, Tile.FLOOR)
 
         return cave
 
     @staticmethod
-    def dig(cave, (xs, ys), (xt, yt)):
+    def dig((xs, ys), (xt, yt)):
         dx = xt - xs
         dy = yt - ys
+
+        corridor = []
 
         x, y = xs, ys
         while x != xt or y != yt:
@@ -162,27 +162,25 @@ class LinkRooms(CaveGenerationCommand):
                     x += dx/abs(dx)
                 else:
                     y += dy/abs(dy)
-            cave.set((x, y), Tile.FLOOR)
+            corridor.append(Square(x, y))
 
-        return cave
+        return corridor
 
     @staticmethod
     def _calculate_distance(room_a, room_b):
         min_distance = 1000000000.0
         closest = []
-        for (xa, ya) in room_a:
-            for(xb, yb) in room_b:
-                x = abs(xa-xb)
-                y = abs(ya-yb)
-                distance = sqrt(pow(x, 2) + pow(y, 2))
+        for pos_a in room_a:
+            for pos_b in room_b:
+                distance = pos_a.distance(pos_b)
                 if distance == min_distance:
-                    closest.append(((xa, ya), (xb, yb)))
+                    closest.append((pos_a, pos_b))
                 elif distance < min_distance:
                     min_distance = distance
-                    closest = [((xa, ya), (xb, yb))]
+                    closest = [(pos_a, pos_b)]
 
         return min_distance, closest
-    
+
     def _find_rooms(self, cave, rooms=None):
         if not rooms:
             rooms = []
@@ -245,8 +243,6 @@ class TextRenderer(MapRender):
                 str_buffer.append(' ')
             elif val == Tile.EARTH:
                 str_buffer.append('+')
-            elif val == Tile.DIG:
-                str_buffer.append('.')
             else:
                 str_buffer.append(str(val))
 
