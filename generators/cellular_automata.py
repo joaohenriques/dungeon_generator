@@ -2,13 +2,11 @@ from __future__ import print_function
 
 __author__ = 'jpsh'
 
-import os
-import sys
 import time
 from random import random, choice
 from abc import ABCMeta, abstractmethod
 from maps import Tile
-from maps.grid import GridMap, GridPosition
+from maps.grid import GridPosition
 
 import logging
 LOGGING_PREFIX = 'dungeon_generation.cellular_automata.'
@@ -58,23 +56,23 @@ class SmoothCave(CaveGenerationCommand):
     def _execute(self, cave):
         for pos in cave.keys():
             walls = 0
-            if cave.get(pos.nw) != Tile.FLOOR:
+            if cave.get(GridPosition.nw(pos)) != Tile.FLOOR:
                 walls += 1
-            if cave.get(pos.n) != Tile.FLOOR:
+            if cave.get(GridPosition.n(pos)) != Tile.FLOOR:
                 walls += 1
-            if cave.get(pos.ne) != Tile.FLOOR:
-                walls += 1
-
-            if cave.get(pos.w) != Tile.FLOOR:
-                walls += 1
-            if cave.get(pos.e) != Tile.FLOOR:
+            if cave.get(GridPosition.ne(pos)) != Tile.FLOOR:
                 walls += 1
 
-            if cave.get(pos.sw) != Tile.FLOOR:
+            if cave.get(GridPosition.w(pos)) != Tile.FLOOR:
                 walls += 1
-            if cave.get(pos.s) != Tile.FLOOR:
+            if cave.get(GridPosition.e(pos)) != Tile.FLOOR:
                 walls += 1
-            if cave.get(pos.se) != Tile.FLOOR:
+
+            if cave.get(GridPosition.sw(pos)) != Tile.FLOOR:
+                walls += 1
+            if cave.get(GridPosition.s(pos)) != Tile.FLOOR:
+                walls += 1
+            if cave.get(GridPosition.se(pos)) != Tile.FLOOR:
                 walls += 1
 
             if walls > 5:
@@ -106,14 +104,14 @@ class HardenWallsCave(CaveGenerationCommand):
             tile = cave.get(pos)
             if tile == Tile.FLOOR:
                 flooded.add(pos)
-                stack.append(pos.n)
-                stack.append(pos.ne)
-                stack.append(pos.e)
-                stack.append(pos.se)
-                stack.append(pos.s)
-                stack.append(pos.sw)
-                stack.append(pos.w)
-                stack.append(pos.nw)
+                stack.append(GridPosition.n(pos))
+                stack.append(GridPosition.ne(pos))
+                stack.append(GridPosition.e(pos))
+                stack.append(GridPosition.se(pos))
+                stack.append(GridPosition.s(pos))
+                stack.append(GridPosition.sw(pos))
+                stack.append(GridPosition.w(pos))
+                stack.append(GridPosition.nw(pos))
 
             elif tile == Tile.EARTH:
                 cave.set(pos, Tile.WALL)
@@ -126,10 +124,10 @@ class CloseOneSquareRooms(CaveGenerationCommand):
     def _execute(self, cave):
         for pos in cave.keys(filter_expr=lambda x: x == Tile.FLOOR):
             if (cave.get(pos) == Tile.FLOOR and
-                    cave.get(pos.s) != Tile.FLOOR and
-                    cave.get(pos.e) != Tile.FLOOR and
-                    cave.get(pos.n) != Tile.FLOOR and
-                    cave.get(pos.w) != Tile.FLOOR):
+                    cave.get(GridPosition.s(pos)) != Tile.FLOOR and
+                    cave.get(GridPosition.e(pos)) != Tile.FLOOR and
+                    cave.get(GridPosition.n(pos)) != Tile.FLOOR and
+                    cave.get(GridPosition.w(pos)) != Tile.FLOOR):
 
                 cave.set(pos, Tile.EARTH)
 
@@ -175,7 +173,7 @@ class LinkRooms(CaveGenerationCommand):
         dx = xt - xs
         dy = yt - ys
 
-        corridor = [GridPosition(xs, ys), GridPosition(xt, yt)]
+        corridor = [(xs, ys), (xt, yt)]
 
         x, y = xs, ys
         while x != xt or y != yt:
@@ -188,7 +186,7 @@ class LinkRooms(CaveGenerationCommand):
                     x += dx/abs(dx)
                 else:
                     y += dy/abs(dy)
-            corridor.append(GridPosition(x, y))
+            corridor.append((x, y))
 
         return corridor
 
@@ -198,7 +196,7 @@ class LinkRooms(CaveGenerationCommand):
         closest = []
         for pos_a in room_a:
             for pos_b in room_b:
-                distance = pos_a.distance(pos_b)
+                distance = GridPosition.distance(pos_a, pos_b)
                 if distance == min_distance:
                     closest.append((pos_a, pos_b))
                 elif distance < min_distance:
@@ -233,10 +231,10 @@ class LinkRooms(CaveGenerationCommand):
             tile = cave.get(pos)
             if tile == Tile.FLOOR:
                 room.add(pos)
-                stack.append(pos.n)
-                stack.append(pos.e)
-                stack.append(pos.s)
-                stack.append(pos.w)
+                stack.append(GridPosition.n(pos))
+                stack.append(GridPosition.e(pos))
+                stack.append(GridPosition.s(pos))
+                stack.append(GridPosition.w(pos))
 
         return room
 
