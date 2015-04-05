@@ -1,6 +1,5 @@
 __author__ = 'jpsh'
 
-
 from renderers import MapRenderer
 from maps import Tile
 from pygame import Surface

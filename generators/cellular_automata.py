@@ -6,7 +6,7 @@ import time
 from random import random, choice
 from abc import ABCMeta, abstractmethod
 from maps import Tile
-from maps.grid import GridPosition
+from maps.grid import GridTools
 
 import logging
 LOGGING_PREFIX = 'dungeon_generation.cellular_automata.'
@@ -56,23 +56,23 @@ class SmoothCave(CaveGenerationCommand):
     def _execute(self, cave):
         for pos in cave.keys():
             walls = 0
-            if cave.get(GridPosition.nw(pos)) != Tile.FLOOR:
+            if cave.get(GridTools.nw(pos)) != Tile.FLOOR:
                 walls += 1
-            if cave.get(GridPosition.n(pos)) != Tile.FLOOR:
+            if cave.get(GridTools.n(pos)) != Tile.FLOOR:
                 walls += 1
-            if cave.get(GridPosition.ne(pos)) != Tile.FLOOR:
-                walls += 1
-
-            if cave.get(GridPosition.w(pos)) != Tile.FLOOR:
-                walls += 1
-            if cave.get(GridPosition.e(pos)) != Tile.FLOOR:
+            if cave.get(GridTools.ne(pos)) != Tile.FLOOR:
                 walls += 1
 
-            if cave.get(GridPosition.sw(pos)) != Tile.FLOOR:
+            if cave.get(GridTools.w(pos)) != Tile.FLOOR:
                 walls += 1
-            if cave.get(GridPosition.s(pos)) != Tile.FLOOR:
+            if cave.get(GridTools.e(pos)) != Tile.FLOOR:
                 walls += 1
-            if cave.get(GridPosition.se(pos)) != Tile.FLOOR:
+
+            if cave.get(GridTools.sw(pos)) != Tile.FLOOR:
+                walls += 1
+            if cave.get(GridTools.s(pos)) != Tile.FLOOR:
+                walls += 1
+            if cave.get(GridTools.se(pos)) != Tile.FLOOR:
                 walls += 1
 
             if walls > 5:
@@ -104,14 +104,14 @@ class HardenWallsCave(CaveGenerationCommand):
             tile = cave.get(pos)
             if tile == Tile.FLOOR:
                 flooded.add(pos)
-                stack.append(GridPosition.n(pos))
-                stack.append(GridPosition.ne(pos))
-                stack.append(GridPosition.e(pos))
-                stack.append(GridPosition.se(pos))
-                stack.append(GridPosition.s(pos))
-                stack.append(GridPosition.sw(pos))
-                stack.append(GridPosition.w(pos))
-                stack.append(GridPosition.nw(pos))
+                stack.append(GridTools.n(pos))
+                stack.append(GridTools.ne(pos))
+                stack.append(GridTools.e(pos))
+                stack.append(GridTools.se(pos))
+                stack.append(GridTools.s(pos))
+                stack.append(GridTools.sw(pos))
+                stack.append(GridTools.w(pos))
+                stack.append(GridTools.nw(pos))
 
             elif tile == Tile.EARTH:
                 cave.set(pos, Tile.WALL)
@@ -124,10 +124,10 @@ class CloseOneSquareRooms(CaveGenerationCommand):
     def _execute(self, cave):
         for pos in cave.keys(filter_expr=lambda x: x == Tile.FLOOR):
             if (cave.get(pos) == Tile.FLOOR and
-                    cave.get(GridPosition.s(pos)) != Tile.FLOOR and
-                    cave.get(GridPosition.e(pos)) != Tile.FLOOR and
-                    cave.get(GridPosition.n(pos)) != Tile.FLOOR and
-                    cave.get(GridPosition.w(pos)) != Tile.FLOOR):
+                    cave.get(GridTools.s(pos)) != Tile.FLOOR and
+                    cave.get(GridTools.e(pos)) != Tile.FLOOR and
+                    cave.get(GridTools.n(pos)) != Tile.FLOOR and
+                    cave.get(GridTools.w(pos)) != Tile.FLOOR):
 
                 cave.set(pos, Tile.EARTH)
 
@@ -196,7 +196,7 @@ class LinkRooms(CaveGenerationCommand):
         closest = []
         for pos_a in room_a:
             for pos_b in room_b:
-                distance = GridPosition.distance(pos_a, pos_b)
+                distance = GridTools.distance(pos_a, pos_b)
                 if distance == min_distance:
                     closest.append((pos_a, pos_b))
                 elif distance < min_distance:
@@ -231,10 +231,10 @@ class LinkRooms(CaveGenerationCommand):
             tile = cave.get(pos)
             if tile == Tile.FLOOR:
                 room.add(pos)
-                stack.append(GridPosition.n(pos))
-                stack.append(GridPosition.e(pos))
-                stack.append(GridPosition.s(pos))
-                stack.append(GridPosition.w(pos))
+                stack.append(GridTools.n(pos))
+                stack.append(GridTools.e(pos))
+                stack.append(GridTools.s(pos))
+                stack.append(GridTools.w(pos))
 
         return room
 

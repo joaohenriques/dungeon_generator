@@ -4,6 +4,7 @@ from renderers import MapRenderer
 from maps import Tile
 import sys
 
+
 class TextRenderer(MapRenderer):
 
     def render(self, cave, fp=sys.stdout):
@@ -26,7 +27,6 @@ class TextRenderer(MapRenderer):
         str_buffer.append("#" * (width+1))
         fp.write("".join(str_buffer))
         fp.flush()
-
 
     def render_cell(self, val):
         if val == Tile.WALL:

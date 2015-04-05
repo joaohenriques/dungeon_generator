@@ -82,9 +82,9 @@ from pygame.color import Color
 
 def main_pygame():
 
-    width = 20
-    height = 20
-    block_size = 10
+    width = 60
+    height = 60
+    block_size = 8
 
 
     cave = GridMap(height, width)

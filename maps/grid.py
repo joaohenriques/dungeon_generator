@@ -4,7 +4,7 @@ from maps import Tile
 from math import sqrt
 
 
-class GridPosition(object):
+class GridTools(object):
     @staticmethod
     def n(pos):
         return pos[0], pos[1]-1
