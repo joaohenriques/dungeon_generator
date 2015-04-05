@@ -1,6 +1,6 @@
 __author__ = 'jpsh'
 
-from common.maps import GridMap
+from renderers.text import TextRenderer
 from generators.cellular_automata import *
 
 import logging
@@ -15,25 +15,50 @@ fh.setFormatter(formatter)
 logger.addHandler(fh)
 
 
+class Animator(object):
+
+    def __init__(self, cave, renderer):
+        self.cave = cave
+        self.renderer = renderer
+
+    @staticmethod
+    def _clear_console():
+        if os.name == 'posix':
+            os.system('clear')
+        else:
+            os.system('CLS')
+
+    def animate(self):
+        play_cave = GridMap(self.cave.height, self.cave.width)
+
+        for pos, val in self.cave.history:
+            play_cave.set(pos, val)
+            out_str = self.renderer.render(play_cave)
+
+            # Clear the console
+            self._clear_console()
+            # Write the current frame on stdout and sleep
+            sys.stdout.write(out_str)
+            sys.stdout.flush()
+
+
 def main():
 
-    cave = GridMap(40, 77)
+    cave = GridMap(20, 40)
     creator = RandomizeCave(.35)
     smooth = SmoothCave()
     closerooms = CloseOneSquareRooms()
     flood = HardenWallsCave()
     linkroom = LinkRooms()
 
+    command_queue = [creator, smooth, closerooms, linkroom, flood]
+
+    for command in command_queue:
+        cave = command.execute(cave)
+
     renderer = TextRenderer()
-    animator = Animator(renderer, cave)
-
-    animator.add_command(creator)
-    animator.add_command(smooth)
-    animator.add_command(closerooms)
-    animator.add_command(linkroom)
-    animator.add_command(flood)
-
-    animator.animate(delay=0.1)
+    animator = Animator(cave, renderer)
+    animator.animate()
 
 if __name__ == '__main__':
     main()

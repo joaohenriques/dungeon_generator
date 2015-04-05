@@ -1,7 +1,7 @@
 __author__ = 'jpsh'
 
 from collections import namedtuple
-from common import Tile
+from maps import Tile
 from math import sqrt
 
 Point = namedtuple('Point', ['x', 'y'])
@@ -58,6 +58,7 @@ class GridMap(object):
 
     def __init__(self, height, width):
         self._map = [[Tile.UNKNOWN for _ in range(0, width)] for _ in range(0, height)]
+        self._history = []
 
     @property
     def width(self):
@@ -66,6 +67,10 @@ class GridMap(object):
     @property
     def height(self):
         return len(self._map)
+
+    @property
+    def history(self):
+        return self._history
 
     def get(self, pos):
         x, y = pos
@@ -83,6 +88,7 @@ class GridMap(object):
             if x < 0 or y < 0:
                 raise IndexError
             self._map[y][x] = val
+            self._history.append((pos, val))
         except IndexError:
             # TODO log
             pass

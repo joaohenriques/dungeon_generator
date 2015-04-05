@@ -7,8 +7,8 @@ import sys
 import time
 from random import random, choice
 from abc import ABCMeta, abstractmethod
-from common import Tile
-from common.maps import GridPosition
+from maps import Tile
+from maps.grid import GridMap, GridPosition
 
 import logging
 LOGGING_PREFIX = 'dungeon_generation.cellular_automata.'
@@ -247,64 +247,3 @@ class MapRender(object):
     @abstractmethod
     def render(self, cave):
         pass
-
-
-class TextRenderer(MapRender):
-        
-    def render(self, cave):
-        str_buffer = []
-        width = cave.width
-        str_buffer.append("#" * (width+2))
-        str_buffer.append("\n")
-        str_buffer.append("#")
-        col = 0
-        for val in cave.values():
-            col += 1
-            if val == Tile.WALL:
-                str_buffer.append('#')
-            elif val == Tile.FLOOR:
-                str_buffer.append(' ')
-            elif val == Tile.EARTH:
-                str_buffer.append('+')
-            else:
-                str_buffer.append(str(val))
-
-            if col % width == 0:
-                col = 0
-                str_buffer.append("#")
-                str_buffer.append("\n")
-                str_buffer.append("#")
-        str_buffer.append("#" * (width+1))
-
-        return "".join(str_buffer)
-
-
-class Animator(object):
-
-    def __init__(self, renderer, cave):
-        self.renderer = renderer
-        self.command_queue = []
-        self.cave = cave
-
-    @staticmethod
-    def _clear_console():
-        if os.name == 'posix':
-            os.system('clear')
-        else:
-            os.system('CLS')
-            
-    def add_command(self, command):
-        self.command_queue.append(command)
-
-    def animate(self, delay=1):
-        for command in self.command_queue:
-
-            self.cave = command.execute(self.cave)
-            out_str = self.renderer.render(self.cave)
-
-            # Clear the console
-            self._clear_console()
-            # Write the current frame on stdout and sleep
-            sys.stdout.write(out_str)
-            sys.stdout.flush()
-            time.sleep(delay)
