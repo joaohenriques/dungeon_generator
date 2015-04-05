@@ -48,7 +48,7 @@ class Square(Point):
         return sqrt(pow(abs(self.x-other.x), 2) + pow(abs(self.y-other.y), 2))
 
     def __repr__(self):
-        return "Position(x={}, y={})".format(self.x, self.y)
+        return "Square(x={}, y={})".format(self.x, self.y)
 
     def __str__(self):
         return "({}, {})".format(self.x, self.y)

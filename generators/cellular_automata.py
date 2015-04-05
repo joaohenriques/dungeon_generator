@@ -7,7 +7,6 @@ import sys
 import time
 from random import random, choice
 from abc import ABCMeta, abstractmethod
-from math import sqrt
 from common import Tile
 from common.maps import Square
 
