@@ -10,12 +10,30 @@ from abc import ABCMeta, abstractmethod
 from common import Tile
 from common.maps import Square
 
+import logging
+LOGGING_PREFIX = 'dungeon_generation.cellular_automata.'
+
+
 class CaveGenerationCommand(object):
     __metaclass__ = ABCMeta
-    
+
     @abstractmethod
-    def execute(self, cave):
+    def _execute(self, cave):
         pass
+
+    def execute(self, cave):
+        self._log().debug("beginning of execution")
+        try:
+            start = time.time()
+            cave = self._execute(cave)
+            elapsed = time.time() - start
+            self._log().info("execution time={0:.3f}s".format(elapsed))
+        finally:
+            self._log().debug("end of execution")
+        return cave
+
+    def _log(self):
+        return logging.getLogger(LOGGING_PREFIX + self.__class__.__name__)
 
 
 class RandomizeCave(CaveGenerationCommand):
@@ -29,17 +47,15 @@ class RandomizeCave(CaveGenerationCommand):
         else:
             return Tile.FLOOR
     
-    def execute(self, cave):
-
+    def _execute(self, cave):
         for pos in cave.keys():
             cave.set(pos, self._gen_square())
-
         return cave
 
 
 class SmoothCave(CaveGenerationCommand):
 
-    def execute(self, cave):
+    def _execute(self, cave):
         for pos in cave.keys():
             walls = 0
             if cave.get(pos.nw) != Tile.FLOOR:
@@ -71,7 +87,7 @@ class SmoothCave(CaveGenerationCommand):
 
 class HardenWallsCave(CaveGenerationCommand):
 
-    def execute(self, cave):
+    def _execute(self, cave):
         flooded = set()
         for pos in cave.keys(filter_expr=lambda x: x == Tile.FLOOR):
             cave = self._flood_tile(cave, pos, flooded)
@@ -91,9 +107,13 @@ class HardenWallsCave(CaveGenerationCommand):
             if tile == Tile.FLOOR:
                 flooded.add(pos)
                 stack.append(pos.n)
+                stack.append(pos.ne)
                 stack.append(pos.e)
+                stack.append(pos.se)
                 stack.append(pos.s)
+                stack.append(pos.sw)
                 stack.append(pos.w)
+                stack.append(pos.nw)
 
             elif tile == Tile.EARTH:
                 cave.set(pos, Tile.WALL)
@@ -103,7 +123,7 @@ class HardenWallsCave(CaveGenerationCommand):
 
 class CloseOneSquareRooms(CaveGenerationCommand):
 
-    def execute(self, cave):
+    def _execute(self, cave):
         for pos in cave.keys(filter_expr=lambda x: x == Tile.FLOOR):
             if (cave.get(pos) == Tile.FLOOR and
                     cave.get(pos.s) != Tile.FLOOR and
@@ -118,17 +138,24 @@ class CloseOneSquareRooms(CaveGenerationCommand):
 
 class LinkRooms(CaveGenerationCommand):
 
-    def execute(self, cave):
+    def _execute(self, cave):
         rooms = self._find_rooms(cave)
 
         while len(rooms) > 1:
             paths = []
+            done = False
             for i in range(0, len(rooms)):
+                if done:
+                    break
                 for j in range(i+1, len(rooms)):
                     room_a = rooms[i]
                     room_b = rooms[j]
                     path = self._calculate_distance(room_a, room_b)
                     paths.append((path, (i, j)))
+                    if path[0] < 4:
+                        done = True
+                        break
+
             paths.sort()
             shortest, (a, b) = paths[0]
 
@@ -148,7 +175,7 @@ class LinkRooms(CaveGenerationCommand):
         dx = xt - xs
         dy = yt - ys
 
-        corridor = []
+        corridor = [Square(xs, ys), Square(xt, yt)]
 
         x, y = xs, ys
         while x != xt or y != yt:
@@ -180,20 +207,17 @@ class LinkRooms(CaveGenerationCommand):
 
         return min_distance, closest
 
-    def _find_rooms(self, cave, rooms=None):
-        if not rooms:
-            rooms = []
+    def _find_rooms(self, cave):
+        rooms = set()
+        result = []
 
         for pos in cave.keys(filter_expr=lambda x: x == Tile.FLOOR):
-            in_room = False
-            for room in rooms:
-                if pos in room:
-                    in_room = True
-                    break
-            if not in_room:
-                rooms.append(self._flood_room(cave, pos))
+            if pos not in rooms:
+                room = self._flood_room(cave, pos)
+                rooms.update(room)
+                result.append(room)
 
-        return rooms
+        return result
 
     @staticmethod
     def _flood_room(cave, pos):
