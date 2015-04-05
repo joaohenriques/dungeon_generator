@@ -9,3 +9,7 @@ class MapRenderer(object):
     @abstractmethod
     def render(self, cave):
         pass
+
+    @abstractmethod
+    def render_cell(self, cave):
+        pass

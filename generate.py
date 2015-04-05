@@ -1,10 +1,9 @@
 __author__ = 'jpsh'
 
-import sys
 import os
 from renderers.text import TextRenderer
+from renderers.gui_pygame import PygameRenderer
 from generators.cellular_automata import *
-from maps import Tile
 from maps.grid import GridMap
 import logging
 
@@ -36,13 +35,9 @@ class Animator(object):
 
         for pos, val in self.cave.history:
             play_cave.set(pos, val)
-            out_str = self.renderer.render(play_cave)
-
-            # Clear the console
+             # Clear the console
             self._clear_console()
-            # Write the current frame on stdout and sleep
-            sys.stdout.write(out_str)
-            sys.stdout.flush()
+            out_str = self.renderer.render(play_cave)
 
 
 def main():
@@ -87,12 +82,12 @@ from pygame.color import Color
 
 def main_pygame():
 
-    pygame.init()
-    screen = pygame.display.set_mode((800, 600))
-    clock = pygame.time.Clock()
-    screen.fill(Color('black'))
+    width = 20
+    height = 20
+    block_size = 10
 
-    cave = GridMap(20, 40)
+
+    cave = GridMap(height, width)
     creator = RandomizeCave(.35)
     smooth = SmoothCave()
     closerooms = CloseOneSquareRooms()
@@ -104,18 +99,15 @@ def main_pygame():
     for command in command_queue:
         cave = command.execute(cave)
 
+    pygame.init()
+    screen = pygame.display.set_mode((width*block_size, height*block_size))
+    clock = pygame.time.Clock()
+    screen.fill(Color('black'))
+
     play_cave = GridMap(cave.height, cave.width)
     history = cave.history
 
-    size = 10
-    earth = Surface((size, size))
-    earth.fill(Color('brown'))
-    wall = Surface((size, size))
-    wall.fill(Color('grey'))
-    floor = Surface((size, size))
-    floor.fill(Color('white'))
-    unknown = Surface((size, size))
-    unknown.fill(Color('yellow'))
+    renderer = PygameRenderer(block_size)
 
     done = False
     while not done:
@@ -125,20 +117,13 @@ def main_pygame():
 
         # update
         if len(history) > 0:
-            pos, val = history.pop(0)
-            play_cave.set(pos, val)
+            pos, value = history.pop(0)
+            play_cave.set(pos, value)
 
         #render
-        for pos, value in play_cave.items():
-            pos = (pos[0]*size, pos[1]*size)
-            if value == Tile.EARTH:
-                screen.blit(earth, pos, None)
-            if value == Tile.WALL:
-                screen.blit(wall, pos, None)
-            if value == Tile.FLOOR:
-                screen.blit(floor, pos, None)
-            if value == Tile.UNKNOWN:
-                screen.blit(unknown, pos, None)
+        #for pos, value in play_cave.items():
+            pos_out = (pos[0]*block_size, pos[1]*block_size)
+            screen.blit(renderer.render_cell(value), pos_out, None)
 
         pygame.display.flip()
         elapsed = clock.tick()
@@ -146,3 +131,4 @@ def main_pygame():
 
 if __name__ == '__main__':
     main_pygame()
+    #main()
