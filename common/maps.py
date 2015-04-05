@@ -7,54 +7,54 @@ from math import sqrt
 Point = namedtuple('Point', ['x', 'y'])
 
 
-class Square(Point):
+class GridPosition(Point):
 
     def __init__(self, x, y, **kwargs):
         super(Point, self).__init__(x, y, **kwargs)
 
     @property
     def n(self):
-        return Square(self.x, self.y-1)
+        return GridPosition(self.x, self.y-1)
 
     @property
     def ne(self):
-        return Square(self.x+1, self.y-1)
+        return GridPosition(self.x+1, self.y-1)
 
     @property
     def e(self):
-        return Square(self.x+1, self.y)
+        return GridPosition(self.x+1, self.y)
 
     @property
     def se(self):
-        return Square(self.x+1, self.y+1)
+        return GridPosition(self.x+1, self.y+1)
 
     @property
     def s(self):
-        return Square(self.x, self.y+1)
+        return GridPosition(self.x, self.y+1)
 
     @property
     def sw(self):
-        return Square(self.x-1, self.y+1)
+        return GridPosition(self.x-1, self.y+1)
 
     @property
     def w(self):
-        return Square(self.x-1, self.y)
+        return GridPosition(self.x-1, self.y)
 
     @property
     def nw(self):
-        return Square(self.x-1, self.y-1)
+        return GridPosition(self.x-1, self.y-1)
 
     def distance(self, other):
         return sqrt(pow(abs(self.x-other.x), 2) + pow(abs(self.y-other.y), 2))
 
     def __repr__(self):
-        return "Square(x={}, y={})".format(self.x, self.y)
+        return "{}(x={}, y={})".format(self.__class__.__name__, self.x, self.y)
 
     def __str__(self):
         return "({}, {})".format(self.x, self.y)
 
 
-class SquareMap(object):
+class GridMap(object):
 
     def __init__(self, height, width):
         self._map = [[Tile.UNKNOWN for _ in range(0, width)] for _ in range(0, height)]
@@ -94,7 +94,7 @@ class SquareMap(object):
             end_pos = (self.width, self.height)
         if not filter_expr:
             filter_expr = lambda _: True
-        return (Square(x, y) for y in range(start_pos[1], end_pos[1]) for x in range(start_pos[0], end_pos[0])
+        return (GridPosition(x, y) for y in range(start_pos[1], end_pos[1]) for x in range(start_pos[0], end_pos[0])
                 if filter_expr(self._map[y][x]))
 
     def values(self, start_pos=None, end_pos=None):
@@ -111,6 +111,6 @@ class SquareMap(object):
             end_pos = (self.width, self.height)
         if not filter_expr:
             filter_expr = lambda _: True
-        return ((Square(x, y), self._map[y][x]) for y
+        return ((GridPosition(x, y), self._map[y][x]) for y
                 in range(start_pos[1], end_pos[1]) for x in range(start_pos[0], end_pos[0])
                 if filter_expr(self._map[y][x]))

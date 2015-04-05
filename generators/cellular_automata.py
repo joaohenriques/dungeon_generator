@@ -8,7 +8,7 @@ import time
 from random import random, choice
 from abc import ABCMeta, abstractmethod
 from common import Tile
-from common.maps import Square
+from common.maps import GridPosition
 
 import logging
 LOGGING_PREFIX = 'dungeon_generation.cellular_automata.'
@@ -175,7 +175,7 @@ class LinkRooms(CaveGenerationCommand):
         dx = xt - xs
         dy = yt - ys
 
-        corridor = [Square(xs, ys), Square(xt, yt)]
+        corridor = [GridPosition(xs, ys), GridPosition(xt, yt)]
 
         x, y = xs, ys
         while x != xt or y != yt:
@@ -188,7 +188,7 @@ class LinkRooms(CaveGenerationCommand):
                     x += dx/abs(dx)
                 else:
                     y += dy/abs(dy)
-            corridor.append(Square(x, y))
+            corridor.append(GridPosition(x, y))
 
         return corridor
 

@@ -1,6 +1,6 @@
 __author__ = 'jpsh'
 
-from common.maps import SquareMap
+from common.maps import GridMap
 from generators.cellular_automata import *
 
 import logging
@@ -17,7 +17,7 @@ logger.addHandler(fh)
 
 def main():
 
-    cave = SquareMap(40, 77)
+    cave = GridMap(40, 77)
     creator = RandomizeCave(.35)
     smooth = SmoothCave()
     closerooms = CloseOneSquareRooms()
