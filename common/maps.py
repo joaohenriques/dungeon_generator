@@ -2,7 +2,7 @@ __author__ = 'jpsh'
 
 from collections import namedtuple
 from common import Tile
-
+from math import sqrt
 
 Point = namedtuple('Point', ['x', 'y'])
 
@@ -43,6 +43,9 @@ class Square(Point):
     @property
     def nw(self):
         return Square(self.x-1, self.y-1)
+
+    def distance(self, other):
+        return sqrt(pow(abs(self.x-other.x), 2) + pow(abs(self.y-other.y), 2))
 
     def __repr__(self):
         return "Position(x={}, y={})".format(self.x, self.y)
