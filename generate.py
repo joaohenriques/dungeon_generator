@@ -45,7 +45,7 @@ def main():
     cave = GridMap(20, 40)
     creator = RandomizeCave(.35)
     smooth = SmoothCave()
-    closerooms = CloseOneSquareRooms()
+    closerooms = CloseRooms(area=3)
     flood = HardenWallsCave()
     linkroom = LinkRooms()
 
@@ -64,7 +64,7 @@ def main_no_animation():
     cave = GridMap(40, 77)
     creator = RandomizeCave(.35)
     smooth = SmoothCave()
-    closerooms = CloseOneSquareRooms()
+    closerooms = CloseRooms(area=3)
     flood = HardenWallsCave()
     linkroom = LinkRooms()
 
@@ -88,13 +88,13 @@ def main_pygame():
 
 
     cave = GridMap(height, width)
-    creator = RandomizeCave(.35)
+    creator = RandomizeCave(.4)
     smooth = SmoothCave()
-    closerooms = CloseOneSquareRooms()
+    closerooms = CloseRooms(area=3)
     flood = HardenWallsCave()
     linkroom = LinkRooms()
 
-    command_queue = [creator, smooth, closerooms, linkroom, flood]
+    command_queue = [creator, smooth, closerooms,linkroom, flood]
 
     for command in command_queue:
         cave = command.execute(cave)

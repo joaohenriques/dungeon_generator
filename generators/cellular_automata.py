@@ -88,7 +88,8 @@ class HardenWallsCave(CaveGenerationCommand):
     def _execute(self, cave):
         flooded = set()
         for pos in cave.keys(filter_expr=lambda x: x == Tile.FLOOR):
-            cave = self._flood_tile(cave, pos, flooded)
+            if pos not in flooded:
+                cave = self._flood_tile(cave, pos, flooded)
         return cave
 
     @staticmethod
@@ -119,21 +120,44 @@ class HardenWallsCave(CaveGenerationCommand):
         return cave
 
 
-class CloseOneSquareRooms(CaveGenerationCommand):
+class CloseRooms(CaveGenerationCommand):
 
+    def __init__(self, area=1):
+        self.area = area
+        
     def _execute(self, cave):
+        flooded = set()
         for pos in cave.keys(filter_expr=lambda x: x == Tile.FLOOR):
-            if (cave.get(pos) == Tile.FLOOR and
-                    cave.get(GridTools.s(pos)) != Tile.FLOOR and
-                    cave.get(GridTools.e(pos)) != Tile.FLOOR and
-                    cave.get(GridTools.n(pos)) != Tile.FLOOR and
-                    cave.get(GridTools.w(pos)) != Tile.FLOOR):
-
-                cave.set(pos, Tile.EARTH)
-
+            if pos not in flooded:
+                room = self._flood_room(cave, pos)
+                if len(room) <= self.area:
+                    for cell in room:
+                        cave.set(cell, Tile.EARTH)
+                flooded.update(room)
         return cave
+    
+    @staticmethod
+    def _flood_room(cave, pos):
+        flooded = set()
+        stack = [pos]
 
+        while len(stack) > 0:
+            pos = stack.pop()
 
+            if pos in flooded:
+                continue
+
+            tile = cave.get(pos)
+            if tile == Tile.FLOOR:
+                flooded.add(pos)
+                stack.append(GridTools.n(pos))
+                stack.append(GridTools.e(pos))
+                stack.append(GridTools.s(pos))
+                stack.append(GridTools.w(pos))
+
+        return flooded
+    
+    
 class LinkRooms(CaveGenerationCommand):
 
     def _execute(self, cave):
