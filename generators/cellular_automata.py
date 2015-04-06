@@ -169,11 +169,13 @@ class LinkRooms(CaveGenerationCommand):
         return cave
 
     @staticmethod
-    def dig((xs, ys), (xt, yt)):
+    def dig(start, end):
+        xs, ys = start
+        xt, yt = end
         dx = xt - xs
         dy = yt - ys
 
-        corridor = [(xs, ys), (xt, yt)]
+        corridor = [start,end]
 
         x, y = xs, ys
         while x != xt or y != yt:
@@ -186,7 +188,8 @@ class LinkRooms(CaveGenerationCommand):
                     x += dx/abs(dx)
                 else:
                     y += dy/abs(dy)
-            corridor.append((x, y))
+            pos = (int(x), int(y))
+            corridor.append(pos)
 
         return corridor
 
