@@ -37,10 +37,6 @@ class GridTools(object):
     def nw(pos):
         return pos[0]-1, pos[1]-1
 
-    @staticmethod
-    def distance(pos, other):
-        return hypot(pos[0]-other[0], pos[1]-other[1])
-
 
 class GridMap(object):
 

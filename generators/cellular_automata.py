@@ -223,7 +223,7 @@ class LinkRooms(CaveGenerationCommand):
         closest = []
         for pos_a in room_a:
             for pos_b in room_b:
-                distance = GridTools.distance(pos_a, pos_b)
+                distance = abs(pos_a[0]-pos_b[0]) + abs(pos_a[1]-pos_b[1])
                 if distance == min_distance:
                     closest.append((pos_a, pos_b))
                 elif distance < min_distance:
