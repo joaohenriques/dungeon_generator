@@ -4,7 +4,7 @@ import os
 from renderers.text import TextRenderer
 from renderers.gui_pygame import PygameRenderer
 from generators.cellular_automata import *
-from maps.grid import GridMap
+from maps.grid import GridMap, GridMapDict
 import logging
 
 logger = logging.getLogger('dungeon_generation')
@@ -79,6 +79,7 @@ def main_no_animation():
 import pygame
 from pygame import Surface
 from pygame.color import Color
+import random
 
 def main_pygame():
 
@@ -86,15 +87,14 @@ def main_pygame():
     height = 60
     block_size = 8
 
-
     cave = GridMap(height, width)
-    creator = RandomizeCave(.4)
+    creator = RandomizeCave(.34)
     smooth = SmoothCave()
     closerooms = CloseRooms(area=3)
     flood = HardenWallsCave()
     linkroom = LinkRooms()
 
-    command_queue = [creator, smooth, closerooms,linkroom, flood]
+    command_queue = [creator, smooth, closerooms, linkroom, flood]
 
     for command in command_queue:
         cave = command.execute(cave)
@@ -126,9 +126,9 @@ def main_pygame():
             screen.blit(renderer.render_cell(value), pos_out, None)
 
         pygame.display.flip()
-        elapsed = clock.tick()
-        logger.info("render time={0:.3f}ms".format(elapsed))
+        clock.tick()
+
 
 if __name__ == '__main__':
     main_pygame()
-    #main()
+    #main_no_animation()

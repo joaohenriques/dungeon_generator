@@ -1,7 +1,7 @@
 __author__ = 'jpsh'
 
 from maps import Tile
-from math import sqrt
+from math import hypot
 
 
 class GridTools(object):
@@ -39,7 +39,7 @@ class GridTools(object):
 
     @staticmethod
     def distance(pos, other):
-        return sqrt(pow(abs(pos[0]-other[0]), 2) + pow(abs(pos[1]-other[1]), 2))
+        return hypot(pos[0]-other[0], pos[1]-other[1])
 
 
 class GridMap(object):
@@ -108,3 +108,57 @@ class GridMap(object):
         return (((x, y), self._map[y][x]) for y
                 in range(start_pos[1], end_pos[1]) for x in range(start_pos[0], end_pos[0])
                 if filter_expr(self._map[y][x]))
+
+class GridMapDict(object):
+    def __init__(self, height, width):
+        self._map = {}
+        self._width = height
+        self._height = height
+        self._history = []
+        for y in xrange(0, height):
+            for x in xrange(0, width):
+                self._map[(x, y)] = Tile.UNKNOWN
+
+    @property
+    def width(self):
+        return self._width
+
+    @property
+    def height(self):
+        return self._height
+
+    @property
+    def history(self):
+        return self._history
+
+    def get(self, pos):
+        try:
+            return self._map[pos]
+        except KeyError:
+            # TODO log
+            return Tile.UNKNOWN
+
+    def set(self, pos, tile):
+        try:
+            self._map[pos] = tile
+            self._history.append((pos, tile))
+        except KeyError:
+            # TODO log
+            pass
+
+    def keys(self, filter_expr=None):
+
+        if not filter_expr:
+            filter_expr = lambda _: True
+
+        return (pos for pos, val in self._map.items() if filter_expr(val))
+
+    def values(self):
+        return self._map.values()
+
+    def items(self, filter_expr=None):
+
+        if not filter_expr:
+            filter_expr = lambda _: True
+
+        return ((pos, val) for pos, val in self._map.items() if filter_expr(val))
