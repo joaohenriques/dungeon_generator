@@ -4,7 +4,7 @@ import os
 from renderers.text import TextRenderer
 from renderers.gui_pygame import PygameRenderer
 from generators.cellular_automata import *
-from maps.grid import GridMap, GridMapDict
+from maps.grid import GridMap
 import logging
 
 logger = logging.getLogger('dungeon_generation')
@@ -83,18 +83,18 @@ import random
 
 def main_pygame():
 
-    width = 60
-    height = 60
-    block_size = 8
+    width = 80
+    height = 80
+    block_size = 6
 
     cave = GridMap(height, width)
-    creator = RandomizeCave(.34)
+    creator = RandomizeCave(.43)
     smooth = SmoothCave()
-    closerooms = CloseRooms(area=3)
+    close_rooms = CloseRooms(area=3)
     flood = HardenWallsCave()
-    linkroom = LinkRooms()
+    link_rooms = LinkRooms()
 
-    command_queue = [creator, smooth, closerooms, linkroom, flood]
+    command_queue = [creator, smooth, smooth, link_rooms, close_rooms, flood]
 
     for command in command_queue:
         cave = command.execute(cave)

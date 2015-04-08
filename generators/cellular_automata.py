@@ -56,26 +56,26 @@ class SmoothCave(CaveGenerationCommand):
     def _execute(self, cave):
         for pos in cave.keys():
             walls = 0
-            if cave.get(GridTools.nw(pos)) != Tile.FLOOR:
+            if cave.get(GridTools.nw(pos)) is not Tile.FLOOR:
                 walls += 1
-            if cave.get(GridTools.n(pos)) != Tile.FLOOR:
+            if cave.get(GridTools.n(pos)) is not Tile.FLOOR:
                 walls += 1
-            if cave.get(GridTools.ne(pos)) != Tile.FLOOR:
-                walls += 1
-
-            if cave.get(GridTools.w(pos)) != Tile.FLOOR:
-                walls += 1
-            if cave.get(GridTools.e(pos)) != Tile.FLOOR:
+            if cave.get(GridTools.ne(pos)) is not Tile.FLOOR:
                 walls += 1
 
-            if cave.get(GridTools.sw(pos)) != Tile.FLOOR:
+            if cave.get(GridTools.w(pos)) is not Tile.FLOOR:
                 walls += 1
-            if cave.get(GridTools.s(pos)) != Tile.FLOOR:
-                walls += 1
-            if cave.get(GridTools.se(pos)) != Tile.FLOOR:
+            if cave.get(GridTools.e(pos)) is not Tile.FLOOR:
                 walls += 1
 
-            if walls > 5:
+            if cave.get(GridTools.sw(pos)) is not Tile.FLOOR:
+                walls += 1
+            if cave.get(GridTools.s(pos)) is not Tile.FLOOR:
+                walls += 1
+            if cave.get(GridTools.se(pos)) is not Tile.FLOOR:
+                walls += 1
+
+            if walls > 5 and cave.get(pos) is Tile.FLOOR:
                 cave.set(pos, Tile.EARTH)
             elif walls < 4:
                 cave.set(pos, Tile.FLOOR)
@@ -87,34 +87,34 @@ class HardenWallsCave(CaveGenerationCommand):
 
     def _execute(self, cave):
         flooded = set()
-        for pos in cave.keys(filter_expr=lambda x: x == Tile.FLOOR):
+        for pos in cave.keys(filter_expr=lambda x: x is Tile.FLOOR):
             if pos not in flooded:
                 cave = self._flood_tile(cave, pos, flooded)
         return cave
 
     @staticmethod
     def _flood_tile(cave, pos, flooded):
-        stack = [pos]
+        queue = [pos]
 
-        while len(stack) > 0:
-            pos = stack.pop()
+        while len(queue) > 0:
+            pos = queue.pop(0)
 
             if pos in flooded:
                 continue
 
             tile = cave.get(pos)
-            if tile == Tile.FLOOR:
+            if tile is Tile.FLOOR:
                 flooded.add(pos)
-                stack.append(GridTools.n(pos))
-                stack.append(GridTools.ne(pos))
-                stack.append(GridTools.e(pos))
-                stack.append(GridTools.se(pos))
-                stack.append(GridTools.s(pos))
-                stack.append(GridTools.sw(pos))
-                stack.append(GridTools.w(pos))
-                stack.append(GridTools.nw(pos))
+                queue.append(GridTools.n(pos))
+                queue.append(GridTools.ne(pos))
+                queue.append(GridTools.e(pos))
+                queue.append(GridTools.se(pos))
+                queue.append(GridTools.s(pos))
+                queue.append(GridTools.sw(pos))
+                queue.append(GridTools.w(pos))
+                queue.append(GridTools.nw(pos))
 
-            elif tile == Tile.EARTH:
+            elif tile is Tile.EARTH:
                 cave.set(pos, Tile.WALL)
 
         return cave
@@ -127,7 +127,7 @@ class CloseRooms(CaveGenerationCommand):
         
     def _execute(self, cave):
         flooded = set()
-        for pos in cave.keys(filter_expr=lambda x: x == Tile.FLOOR):
+        for pos in cave.keys(filter_expr=lambda x: x is Tile.FLOOR):
             if pos not in flooded:
                 room = self._flood_room(cave, pos)
                 if len(room) <= self.area:
@@ -139,21 +139,21 @@ class CloseRooms(CaveGenerationCommand):
     @staticmethod
     def _flood_room(cave, pos):
         flooded = set()
-        stack = [pos]
+        queue = [pos]
 
-        while len(stack) > 0:
-            pos = stack.pop()
+        while len(queue) > 0:
+            pos = queue.pop(0)
 
             if pos in flooded:
                 continue
 
             tile = cave.get(pos)
-            if tile == Tile.FLOOR:
+            if tile is Tile.FLOOR:
                 flooded.add(pos)
-                stack.append(GridTools.n(pos))
-                stack.append(GridTools.e(pos))
-                stack.append(GridTools.s(pos))
-                stack.append(GridTools.w(pos))
+                queue.append(GridTools.n(pos))
+                queue.append(GridTools.e(pos))
+                queue.append(GridTools.s(pos))
+                queue.append(GridTools.w(pos))
 
         return flooded
     
@@ -161,31 +161,27 @@ class CloseRooms(CaveGenerationCommand):
 class LinkRooms(CaveGenerationCommand):
 
     def _execute(self, cave):
-        rooms = self._find_rooms(cave)
+        all_rooms = self._find_rooms(cave)
 
-        while len(rooms) > 1:
+        while len(all_rooms) > 1:
+            all_rooms.sort(lambda x, y: len(x)-len(y))
+
+            room = all_rooms.pop()
+
             paths = []
-            done = False
-            for i in range(0, len(rooms)):
-                if done:
+            for target_room in all_rooms:
+                path = self._calculate_distance(room, target_room)
+                paths.append((path, target_room))
+                if path[0] < 4:
                     break
-                for j in range(i+1, len(rooms)):
-                    room_a = rooms[i]
-                    room_b = rooms[j]
-                    path = self._calculate_distance(room_a, room_b)
-                    paths.append((path, (i, j)))
-                    if path[0] < 4:
-                        done = True
-                        break
 
             paths.sort()
-            shortest, (a, b) = paths[0]
+            shortest, target_room = paths[0]
 
             (pos_s, pos_t) = choice(shortest[1])
             corridor = self.dig(pos_s, pos_t)
-            rooms[a].update(corridor)
-            rooms[a].update(rooms[b])
-            del rooms[b]
+            target_room.update(corridor)
+            target_room.update(room)
 
             for pos in corridor:
                 cave.set(pos, Tile.FLOOR)
@@ -232,36 +228,36 @@ class LinkRooms(CaveGenerationCommand):
 
         return min_distance, closest
 
-    def _find_rooms(self, cave):
-        rooms = set()
-        result = []
+    def _find_rooms(self, cave, bounding_box=None):
+        flooded = set()
+        rooms = []
 
-        for pos in cave.keys(filter_expr=lambda x: x == Tile.FLOOR):
-            if pos not in rooms:
+        for pos in cave.keys(filter_expr=lambda x: x is Tile.FLOOR, bb=bounding_box):
+            if pos not in flooded:
                 room = self._flood_room(cave, pos)
-                rooms.update(room)
-                result.append(room)
+                flooded.update(room)
+                rooms.append(room)
 
-        return result
+        return rooms
 
     @staticmethod
     def _flood_room(cave, pos):
         room = set()
-        stack = [pos]
+        queue = [pos]
 
-        while len(stack) > 0:
-            pos = stack.pop()
+        while len(queue) > 0:
+            pos = queue.pop(0)
 
             if pos in room:
                 continue
 
             tile = cave.get(pos)
-            if tile == Tile.FLOOR:
+            if tile is Tile.FLOOR:
                 room.add(pos)
-                stack.append(GridTools.n(pos))
-                stack.append(GridTools.e(pos))
-                stack.append(GridTools.s(pos))
-                stack.append(GridTools.w(pos))
+                queue.append(GridTools.n(pos))
+                queue.append(GridTools.e(pos))
+                queue.append(GridTools.s(pos))
+                queue.append(GridTools.w(pos))
 
         return room
 

@@ -2,7 +2,7 @@ from __future__ import print_function
 
 __author__ = 'jpsh'
 
-from maps.grid import GridMap, GridMapDict
+from maps.grid import GridMap
 from generators.cellular_automata import *
 from timeit import timeit
 import random
@@ -35,7 +35,7 @@ def items_filter(grid):
         pass
 
 def generate_map(cave):
-    random.seed(0)
+    random.seed(15)
     creator = RandomizeCave(.34)
     smooth = SmoothCave()
     closerooms = CloseRooms(area=3)
@@ -48,7 +48,7 @@ def generate_map(cave):
         cave = command.execute(cave)
 
 print("GridMap")
-grid = GridMap(40, 40)
+grid = GridMap(60, 60)
 print("keys={}".format(timeit(lambda:keys(grid), number=100)))
 print("keys_filter={}".format(timeit(lambda:keys_filter(grid), number=100)))
 print("values={}".format(timeit(lambda:values(grid), number=100)))
@@ -57,12 +57,6 @@ print("items_filter={}".format(timeit(lambda:items_filter(grid), number=100)))
 print("raw={}".format(timeit(lambda:raw(grid), number=100)))
 print("map={}".format(timeit(lambda:generate_map(grid), number=2)))
 
-print("GridMapDict")
-grid = GridMapDict(40, 40)
-print("keys={}".format(timeit(lambda:keys(grid), number=100)))
-print("keys_filter={}".format(timeit(lambda:keys_filter(grid), number=100)))
-print("values={}".format(timeit(lambda:values(grid), number=100)))
-print("items={}".format(timeit(lambda:items(grid), number=100)))
-print("items_filter={}".format(timeit(lambda:items_filter(grid), number=100)))
-print("raw={}".format(timeit(lambda:raw(grid), number=100)))
-print("map={}".format(timeit(lambda:generate_map(grid), number=2)))
+# import cProfile
+# a = lambda:generate_map(grid)
+# cProfile.run('a()')
