@@ -166,10 +166,22 @@ class LinkRooms(CaveGenerationCommand):
         while len(all_rooms) > 1:
             all_rooms.sort(lambda x, y: len(x)-len(y))
 
-            room = all_rooms.pop()
+            room = all_rooms.pop(0)
+            bb = GridTools.bounding_box(room)
+            rooms = []
+            extend = 0
+            w = cave.width
+            h = cave.height
+            while len(rooms) == 0:
+                extend += 2
+                bb = (max(0, bb[0]-extend),
+                      max(0, bb[1]-extend),
+                      min(w, bb[2]+extend),
+                      min(h, bb[3]+extend))
+                rooms = self._find_rooms(cave, bounding_box=bb, flooded=set(room))
 
             paths = []
-            for target_room in all_rooms:
+            for target_room in rooms:
                 path = self._calculate_distance(room, target_room)
                 paths.append((path, target_room))
                 if path[0] < 4:
@@ -180,8 +192,12 @@ class LinkRooms(CaveGenerationCommand):
 
             (pos_s, pos_t) = choice(shortest[1])
             corridor = self.dig(pos_s, pos_t)
-            target_room.update(corridor)
-            target_room.update(room)
+            # TODO find the target room
+            for other in all_rooms:
+                if target_room.issubset(other):
+                    other.update(corridor)
+                    other.update(room)
+                    break
 
             for pos in corridor:
                 cave.set(pos, Tile.FLOOR)
@@ -195,7 +211,7 @@ class LinkRooms(CaveGenerationCommand):
         dx = xt - xs
         dy = yt - ys
 
-        corridor = [start,end]
+        corridor = [start, end]
 
         x, y = xs, ys
         while x != xt or y != yt:
@@ -218,6 +234,8 @@ class LinkRooms(CaveGenerationCommand):
         min_distance = 1000000000.0
         closest = []
         for pos_a in room_a:
+            if min_distance <= 2:
+                    break
             for pos_b in room_b:
                 distance = abs(pos_a[0]-pos_b[0]) + abs(pos_a[1]-pos_b[1])
                 if distance == min_distance:
@@ -225,11 +243,14 @@ class LinkRooms(CaveGenerationCommand):
                 elif distance < min_distance:
                     min_distance = distance
                     closest = [(pos_a, pos_b)]
+                if min_distance <= 2:
+                    break
 
         return min_distance, closest
 
-    def _find_rooms(self, cave, bounding_box=None):
-        flooded = set()
+    def _find_rooms(self, cave, bounding_box=None, flooded=None):
+        if not flooded:
+            flooded = set()
         rooms = []
 
         for pos in cave.keys(filter_expr=lambda x: x is Tile.FLOOR, bb=bounding_box):

@@ -1,7 +1,6 @@
 __author__ = 'jpsh'
 
 from maps import Tile
-from math import hypot
 
 
 class GridTools(object):
@@ -36,6 +35,20 @@ class GridTools(object):
     @staticmethod
     def nw(pos):
         return pos[0]-1, pos[1]-1
+
+    @staticmethod
+    def bounding_box(cells):
+        lst = list(cells)
+        x1, y1 = lst[0]
+        x2, y2 = lst[0]
+
+        for x, y in lst[1:]:
+            x1 = min(x1, x)
+            y1 = min(y1, y)
+            x2 = max(x2, x)
+            y2 = max(y2, y)
+
+        return x1, y1, x2, y2
 
 
 class GridMap(object):

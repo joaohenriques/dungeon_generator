@@ -77,18 +77,18 @@ def main_no_animation():
     print(renderer.render(cave))
 
 import pygame
-from pygame import Surface
 from pygame.color import Color
 import random
 
 def main_pygame():
 
-    width = 80
-    height = 80
-    block_size = 6
+    width = 100
+    height = 100
+    block_size = 5
+    wall_prob = .4
 
     cave = GridMap(height, width)
-    creator = RandomizeCave(.43)
+    creator = RandomizeCave(wall_prob)
     smooth = SmoothCave()
     close_rooms = CloseRooms(area=3)
     flood = HardenWallsCave()

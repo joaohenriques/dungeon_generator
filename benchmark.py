@@ -36,7 +36,7 @@ def items_filter(grid):
 
 def generate_map(cave):
     random.seed(15)
-    creator = RandomizeCave(.34)
+    creator = RandomizeCave(.40)
     smooth = SmoothCave()
     closerooms = CloseRooms(area=3)
     flood = HardenWallsCave()
@@ -48,7 +48,7 @@ def generate_map(cave):
         cave = command.execute(cave)
 
 print("GridMap")
-grid = GridMap(60, 60)
+grid = GridMap(100, 100)
 print("keys={}".format(timeit(lambda:keys(grid), number=100)))
 print("keys_filter={}".format(timeit(lambda:keys_filter(grid), number=100)))
 print("values={}".format(timeit(lambda:values(grid), number=100)))
