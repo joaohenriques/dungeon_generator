@@ -164,7 +164,7 @@ class LinkRooms(CaveGenerationCommand):
         all_rooms = self._find_rooms(cave)
 
         while len(all_rooms) > 1:
-            all_rooms.sort(lambda x, y: len(x)-len(y))
+            all_rooms.sort(key=lambda x: len(x))
 
             room = all_rooms.pop(0)
             bb = GridTools.bounding_box(room)
