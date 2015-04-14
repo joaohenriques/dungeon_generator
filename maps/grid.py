@@ -90,23 +90,19 @@ class GridMap(object):
             # TODO log
             pass
 
-    def keys(self, bb=None, filter_expr=None):
+    def keys(self, bb=None, tileset=None):
         if not bb:
             bb = (0, 0, self.width, self.height)
-        if not filter_expr:
-            filter_expr = lambda _: True
         return ((x, y) for y in range(bb[1], bb[3]) for x in range(bb[0], bb[2])
-                if filter_expr(self._map[y][x]))
+                if not tileset or self._map[y][x] in tileset)
 
     def values(self, bb=None):
         if not bb:
             bb = (0, 0, self.width, self.height)
         return (self._map[y][x] for y in range(bb[1], bb[3]) for x in range(bb[0], bb[2]))
 
-    def items(self, bb=None, filter_expr=None):
+    def items(self, bb=None, tileset=None):
         if not bb:
             bb = (0, 0, self.width, self.height)
-        if not filter_expr:
-            filter_expr = lambda _: True
         return (((x, y), self._map[y][x]) for y in range(bb[1], bb[3]) for x in range(bb[0], bb[2])
-                if filter_expr(self._map[y][x]))
+                if not tileset or self._map[y][x] in tileset)

@@ -87,7 +87,7 @@ class HardenWallsCave(CaveGenerationCommand):
 
     def _execute(self, cave):
         flooded = set()
-        for pos in cave.keys(filter_expr=lambda x: x is Tile.FLOOR):
+        for pos in cave.keys(tileset=frozenset([Tile.FLOOR])):
             if pos not in flooded:
                 cave = self._flood_tile(cave, pos, flooded)
         return cave
@@ -127,7 +127,7 @@ class CloseRooms(CaveGenerationCommand):
         
     def _execute(self, cave):
         flooded = set()
-        for pos in cave.keys(filter_expr=lambda x: x is Tile.FLOOR):
+        for pos in cave.keys(tileset=frozenset([Tile.FLOOR])):
             if pos not in flooded:
                 room = self._flood_room(cave, pos)
                 if len(room) <= self.area:
@@ -178,7 +178,7 @@ class LinkRooms(CaveGenerationCommand):
                       max(0, bb[1]-extend),
                       min(w, bb[2]+extend),
                       min(h, bb[3]+extend))
-                rooms = self._find_rooms(cave, bounding_box=bb, flooded=set(room))
+                rooms = self._find_rooms(cave, bounding_box=bb, flooded=room)
 
             paths = []
             for target_room in rooms:
@@ -231,7 +231,7 @@ class LinkRooms(CaveGenerationCommand):
 
     @staticmethod
     def _calculate_distance(room_a, room_b):
-        min_distance = 1000000000.0
+        min_distance = 1000000
         closest = []
         for pos_a in room_a:
             if min_distance <= 2:
@@ -251,9 +251,11 @@ class LinkRooms(CaveGenerationCommand):
     def _find_rooms(self, cave, bounding_box=None, flooded=None):
         if not flooded:
             flooded = set()
+        else:
+            flooded = set(flooded)
         rooms = []
 
-        for pos in cave.keys(filter_expr=lambda x: x is Tile.FLOOR, bb=bounding_box):
+        for pos in cave.keys(tileset=frozenset([Tile.FLOOR]), bb=bounding_box):
             if pos not in flooded:
                 room = self._flood_room(cave, pos)
                 flooded.update(room)
