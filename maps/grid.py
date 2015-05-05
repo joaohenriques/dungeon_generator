@@ -37,6 +37,21 @@ class GridTools(object):
         return pos[0]-1, pos[1]-1
 
     @staticmethod
+    def pos_in_radius(pos, radius, radius_exclude=0):
+        x,y = pos
+        for r in range(radius_exclude+1, radius + 1):
+            # corners first
+            yield (x-r, y-r)
+            yield (x+r, y-r)
+            yield (x+r, y+r)
+            yield (x-r, y+r)
+            for d in range(1, r * 2):
+                yield (x-r+d, y-r)
+                yield (x+r, y-r+d)
+                yield (x+r-d, y+r)
+                yield (x-r, y+r-d)
+
+    @staticmethod
     def bounding_box(cells):
         lst = list(cells)
         x1, y1 = lst[0]
@@ -55,14 +70,8 @@ class GridMap(object):
 
     def __init__(self, height, width):
         self._map = [[Tile.UNKNOWN for _ in range(0, width)] for _ in range(0, height)]
-
-    @property
-    def width(self):
-        return len(self._map[0])
-
-    @property
-    def height(self):
-        return len(self._map)
+        self.width = width
+        self.height = height
 
     def get(self, pos):
         x, y = pos
@@ -83,6 +92,16 @@ class GridMap(object):
         except IndexError:
             # TODO log
             pass
+
+    def batch_set(self, values):
+        for (x, y), val in values:
+            try:
+                if x < 0 or y < 0:
+                    raise IndexError
+                self._map[y][x] = val
+            except IndexError:
+                # TODO log
+                pass
 
     def keys(self, bb=None, tileset=None):
         if not bb:
@@ -112,5 +131,9 @@ class GridMapLog(GridMap):
         return self._history
 
     def set(self, pos, val):
-        self._history.append((pos, val))
+        self._history.append(('set', (pos, val)))
         super(GridMapLog, self).set(pos, val)
+
+    def batch_set(self, values):
+        self._history.append(('batch_set', values))
+        super(GridMapLog, self).batch_set(values)
