@@ -43,10 +43,10 @@ class Animator(object):
 def main():
 
     cave = GridMap(25, 70)
-    creator = RandomizeCave(.35)
-    smooth = SmoothCave()
+    creator = RandomizeMap(.35)
+    smooth = SmoothMap()
     #closerooms = CloseRooms(area=3)
-    flood = HardenWallsCave()
+    flood = HardenWallsMap()
     #linkroom = LinkRooms()
 
     command_queue = [creator, smooth, smooth, flood]
@@ -61,10 +61,10 @@ def main():
 def main_no_animation():
 
     cave = GridMap(40, 77)
-    creator = RandomizeCave(.35)
-    smooth = SmoothCave()
+    creator = RandomizeMap(.35)
+    smooth = SmoothMap()
     closerooms = CloseRooms(area=3)
-    flood = HardenWallsCave()
+    flood = HardenWallsMap()
     linkroom = LinkRooms()
 
     command_queue = [creator, smooth, closerooms, linkroom, flood]
@@ -80,20 +80,19 @@ from pygame.color import Color
 import random
 
 def main_pygame():
-
-    width = 100
-    height = 100
-    block_size = 5
-    wall_prob = .4
+    width = 70
+    height = 70
+    block_size = 4
+    wall_prob = .48
 
     cave = GridMapLog(height, width)
-    creator = RandomizeCave(wall_prob)
-    smooth = SmoothCave()
+    creator = RandomizeMap(wall_prob)
+    smooth = SmoothMap()
     close_rooms = CloseRooms(area=3)
-    flood = HardenWallsCave()
+    flood = HardenWallsMap()
     link_rooms = LinkRooms()
 
-    command_queue = [creator, smooth, smooth, link_rooms, close_rooms, flood]
+    command_queue = [creator, smooth, smooth, close_rooms, link_rooms, flood]
 
     for command in command_queue:
         cave = command.execute(cave)
@@ -116,11 +115,16 @@ def main_pygame():
 
         # update
         if len(history) > 0:
-            pos, value = history.pop(0)
-            play_cave.set(pos, value)
+            op, params = history.pop(0)
+            if op == 'set':
+                pos, value = params
+                play_cave.set(pos, value)
+            elif op == 'batch_set':
+                for pos, value in params:
+                    play_cave.set(pos, value)
 
         #render
-        #for pos, value in play_cave.items():
+        for pos, value in play_cave.items():
             pos_out = (pos[0]*block_size, pos[1]*block_size)
             screen.blit(renderer.render_cell(value), pos_out, None)
 

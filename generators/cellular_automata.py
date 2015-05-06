@@ -3,16 +3,18 @@ from __future__ import print_function
 __author__ = 'jpsh'
 
 import time
-from random import random, choice
+from random import random, choice, shuffle
 from abc import ABCMeta, abstractmethod
 from maps import Tile
 from maps.grid import GridTools
+import time
+from functools import wraps
 
 import logging
 LOGGING_PREFIX = 'dungeon_generation.cellular_automata.'
 
 
-class CaveGenerationCommand(object):
+class MapGenerationCommand(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
@@ -34,66 +36,66 @@ class CaveGenerationCommand(object):
         return logging.getLogger(LOGGING_PREFIX + self.__class__.__name__)
 
 
-class RandomizeCave(CaveGenerationCommand):
+class RandomizeMap(MapGenerationCommand):
 
     def __init__(self, prob):
         self.prob = prob
         
     def _gen_square(self):
-        if random() >= self.prob:
+        if random() < self.prob:
             return Tile.EARTH
         else:
             return Tile.FLOOR
     
     def _execute(self, cave):
+        actions = []
         for pos in cave.keys():
-            cave.set(pos, self._gen_square())
+            actions.append((pos, self._gen_square()))
+
+        cave.batch_set(actions)
         return cave
 
 
-class SmoothCave(CaveGenerationCommand):
+class SmoothMap(MapGenerationCommand):
 
     def _execute(self, cave):
-        for pos in cave.keys():
+        actions = []
+        cache = {}
+        lst = list(cave.keys())
+        shuffle(lst)
+        for pos in lst:
             walls = 0
-            if cave.get(GridTools.nw(pos)) is not Tile.FLOOR:
-                walls += 1
-            if cave.get(GridTools.n(pos)) is not Tile.FLOOR:
-                walls += 1
-            if cave.get(GridTools.ne(pos)) is not Tile.FLOOR:
-                walls += 1
-
-            if cave.get(GridTools.w(pos)) is not Tile.FLOOR:
-                walls += 1
-            if cave.get(GridTools.e(pos)) is not Tile.FLOOR:
-                walls += 1
-
-            if cave.get(GridTools.sw(pos)) is not Tile.FLOOR:
-                walls += 1
-            if cave.get(GridTools.s(pos)) is not Tile.FLOOR:
-                walls += 1
-            if cave.get(GridTools.se(pos)) is not Tile.FLOOR:
-                walls += 1
+            for pos_r in GridTools.pos_in_radius(pos, 1):
+                if (pos in cache and pos[cache] is not Tile.FLOOR) or cave.get(pos_r) is not Tile.FLOOR:
+                    walls += 1
 
             if walls > 5 and cave.get(pos) is Tile.FLOOR:
-                cave.set(pos, Tile.EARTH)
+                actions.append((pos, Tile.EARTH))
+                cache[pos] = Tile.EARTH
             elif walls < 4:
-                cave.set(pos, Tile.FLOOR)
-                       
+                actions.append((pos, Tile.FLOOR))
+                cache[pos] = Tile.FLOOR
+
+        cave.batch_set(actions)
+
         return cave
 
 
-class HardenWallsCave(CaveGenerationCommand):
+class HardenWallsMap(MapGenerationCommand):
 
     def _execute(self, cave):
         flooded = set()
+        actions = []
         for pos in cave.keys(tileset=frozenset([Tile.FLOOR])):
             if pos not in flooded:
-                cave = self._flood_tile(cave, pos, flooded)
+                actions.extend(self._flood_tile(cave, pos, flooded))
+
+        cave.batch_set(actions)
         return cave
 
     @staticmethod
     def _flood_tile(cave, pos, flooded):
+        actions = []
         queue = [pos]
 
         while len(queue) > 0:
@@ -115,25 +117,27 @@ class HardenWallsCave(CaveGenerationCommand):
                 queue.append(GridTools.nw(pos))
 
             elif tile is Tile.EARTH:
-                cave.set(pos, Tile.WALL)
+                actions.append((pos, Tile.WALL))
 
-        return cave
+        return actions
 
 
-class CloseRooms(CaveGenerationCommand):
+class CloseRooms(MapGenerationCommand):
 
     def __init__(self, area=1):
         self.area = area
         
     def _execute(self, cave):
         flooded = set()
+        actions = []
         for pos in cave.keys(tileset=frozenset([Tile.FLOOR])):
             if pos not in flooded:
                 room = self._flood_room(cave, pos)
                 if len(room) <= self.area:
                     for cell in room:
-                        cave.set(cell, Tile.EARTH)
+                        actions.append((cell, Tile.EARTH))
                 flooded.update(room)
+        cave.batch_set(actions)
         return cave
     
     @staticmethod
@@ -158,11 +162,11 @@ class CloseRooms(CaveGenerationCommand):
         return flooded
     
     
-class LinkRooms(CaveGenerationCommand):
+class LinkRooms(MapGenerationCommand):
 
     def _execute(self, cave):
         all_rooms = self._find_rooms(cave)
-
+        actions = []
         while len(all_rooms) > 1:
             all_rooms.sort(key=lambda x: len(x))
 
@@ -173,7 +177,7 @@ class LinkRooms(CaveGenerationCommand):
             w = cave.width
             h = cave.height
             while len(rooms) == 0:
-                extend += 2
+                extend += 1
                 bb = (max(0, bb[0]-extend),
                       max(0, bb[1]-extend),
                       min(w, bb[2]+extend),
@@ -192,7 +196,7 @@ class LinkRooms(CaveGenerationCommand):
 
             (pos_s, pos_t) = choice(shortest[1])
             corridor = self.dig(pos_s, pos_t)
-            # TODO find the target room
+
             for other in all_rooms:
                 if target_room.issubset(other):
                     other.update(corridor)
@@ -200,8 +204,9 @@ class LinkRooms(CaveGenerationCommand):
                     break
 
             for pos in corridor:
-                cave.set(pos, Tile.FLOOR)
+                actions.append((pos, Tile.FLOOR))
 
+        cave.batch_set(actions)
         return cave
 
     @staticmethod
@@ -234,17 +239,15 @@ class LinkRooms(CaveGenerationCommand):
         min_distance = 1000000
         closest = []
         for pos_a in room_a:
-            if min_distance <= 2:
-                    break
             for pos_b in room_b:
                 distance = abs(pos_a[0]-pos_b[0]) + abs(pos_a[1]-pos_b[1])
-                if distance == min_distance:
-                    closest.append((pos_a, pos_b))
-                elif distance < min_distance:
+                if distance < min_distance:
                     min_distance = distance
                     closest = [(pos_a, pos_b)]
-                if min_distance <= 2:
-                    break
+                    if min_distance < 3:
+                        break
+                elif distance == min_distance:
+                    closest.append((pos_a, pos_b))
 
         return min_distance, closest
 

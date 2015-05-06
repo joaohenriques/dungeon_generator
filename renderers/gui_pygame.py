@@ -11,13 +11,13 @@ class PygameRenderer(MapRenderer):
     def __init__(self, block_size):
         self.block_size = block_size
         self._earth = Surface((block_size, block_size))
-        self._earth.fill(Color('brown'))
+        self._earth.fill(Color('#993300ff'))
         self._wall = Surface((block_size, block_size))
-        self._wall .fill(Color('grey'))
+        self._wall .fill(Color('#333333ff'))
         self._floor = Surface((block_size, block_size))
-        self._floor.fill(Color('white'))
+        self._floor.fill(Color('#eeeeeeff'))
         self._unknown = Surface((block_size, block_size))
-        self._unknown.fill(Color('yellow'))
+        self._unknown.fill(Color('#FFFF00FF'))
 
     def render(self, cave, out=None):
         if not out:
